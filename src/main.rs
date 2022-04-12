@@ -1,76 +1,39 @@
+use std::path::Path;
+use rust::create_directories;
 use rust::write_bytes;
 use rust::Args;
-use scraper::{Html, Selector, selector};
+use scraper::{Html, Selector};
 use clap::Parser;
 
-// #[tokio::main]
-// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     let resp = reqwest::get("https://httpbin.org/ip")
-//         .await?
-//         .json::<HashMap<String, String>>()
-//         .await?;
-//     println!("{:#?}", resp);
-//     Ok(())
-// }
-
-/*
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let response = reqwest::get("http://boards.4channel.org/g")
-        .await?;
-
-    let html = response.text().await?;
-    let selector = Selector::parse("img[src]").unwrap();
-    let mut sources = Vec::<String>::new();
-
-    for img in Html::select(&Html::parse_document(&html), &selector) {
-        if let Some(val) = img.value().attr("src") {
-            sources.push(val[2..].to_string());
-        }
-    }
-
-    let mut file_name: &str;
-    let mut path: String;
-
-    for mut link in sources {
-        path = String::from("/tmp/rust/");
-
-        link = format!("{}{}", "https://", link);
-
-        let mut splitted_link = link.split("/")
-            .collect::<Vec<&str>>();
-
-        let image_response = reqwest::get(&link)
-            .await?
-            .bytes()
-            .await?;
-
-        file_name = splitted_link.pop().unwrap();
-        path.push_str(file_name);
-
-        write_file(&path, &image_response);
-    }
-
-    Ok(())
-}
-*/
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    const BASE_URL: &str = "https://boards.4channel.org";
-    const TARGET_PATH: &str = "/tmp/rust/";
-
     let args = Args::parse();
-    let url  = format!("{}{}", BASE_URL, &args.url);
+
+    const BASE_URL: &str = "https://boards.4channel.org";
+
+    let url = format!("{}{}", BASE_URL, &args.url);
     let response = reqwest::get(url).await?;
 
     let html = response.text().await?;
 
-    let selector = Selector::parse("img[src][data-md5]").unwrap();
+    let selector = Selector::parse("a.fileThumb").unwrap();
     let mut srcs = Vec::<String>::new();
 
+    let thread_num = args.url
+        .split("/")
+        .collect::<Vec<&str>>()
+        .pop()
+        .unwrap();
+
+    let target_path = format!("{}/{}", &args.destination, thread_num);
+    
+    create_directories(
+        &thread_num,
+        Path::new(&args.destination)
+    );
+
     for img in Html::select(&Html::parse_document(&html), &selector) {
-        if let Some(val) = img.value().attr("src") {
+        if let Some(val) = img.value().attr("href") {
             srcs.push(
                 format!("{}{}", "https://", &val[2..])
             );
@@ -78,12 +41,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     for link in srcs {
+        if args.verbose {
+            println!("downloading {}", &link);
+        }
+
         let img = reqwest::get(&link)
             .await?
             .bytes()
             .await?;
-
-        // file_name = link.split("/").collect::<Vec<&str>>().pop().unwrap();
 
         let name_extract = link.split("/")
             .collect::<Vec<&str>>()
@@ -93,18 +58,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(val) => val,
             None => panic!("couldn't get file name of {}", link)
         };
-
-        if args.verbose {
-            println!("writing {}", &file_name);
-        }
-
-        // println!("{}{}", TARGET_PATH, file_name);
         
         write_bytes(
-            &format!("{}{}", TARGET_PATH, file_name), 
+            &format!("{}/{}", &target_path, file_name), 
             &img
         );
     }
-
     Ok(())
 }
