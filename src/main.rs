@@ -1,21 +1,16 @@
-mod url_handler;
-
 use std::path::Path;
+use std::process::exit;
 use rust::create_directories;
 use rust::write_bytes;
 use rust::Args;
 use scraper::{Html, Selector};
 use clap::Parser;
-use url_handler::UrlHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    // let url = format!("{}{}", BASE_URL, &args.url);
-    let url = String::new();
-    let response = reqwest::get(url).await?;
-
+    let response = reqwest::get(&args.url).await?;
     let html = response.text().await?;
 
     let selector = Selector::parse("a.fileThumb").unwrap();

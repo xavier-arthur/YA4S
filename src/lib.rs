@@ -1,11 +1,7 @@
-mod url_handler;
-use url_handler::UrlHandler;
-
 use std::{fs::File, io::Write};
 use clap::Parser;
 use std::path::Path;
 use regex::Regex;
-
 use std::fs::{
     create_dir as mkdir,
 };
