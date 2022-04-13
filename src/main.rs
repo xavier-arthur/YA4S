@@ -9,11 +9,7 @@ use clap::Parser;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    const BASE_URL: &str = "https://boards.4channel.org";
-
-    let url = format!("{}{}", BASE_URL, &args.url);
-    let response = reqwest::get(url).await?;
-
+    let response = reqwest::get(&args.url).await?;
     let html = response.text().await?;
 
     let selector = Selector::parse("a.fileThumb").unwrap();
@@ -59,10 +55,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None => panic!("couldn't get file name of {}", link)
         };
         
-        write_bytes(
+        let write_result = write_bytes(
             &format!("{}/{}", &target_path, file_name), 
             &img
         );
+
+        if let Err(err) = write_result {
+            println!("Error while downloading {}\n{}", file_name, err);
+        }
     }
     Ok(())
 }
