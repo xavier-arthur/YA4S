@@ -1,6 +1,7 @@
 use std::{fs::File, io::Write};
 use clap::Parser;
 use std::path::Path;
+use regex::Regex;
 
 use std::fs::{
     create_dir as mkdir,
@@ -29,7 +30,7 @@ pub fn create_directories(name: &str, path: &Path) -> () {
 pub struct Args {
     pub url: String,
 
-    #[clap(short, long)]
+    #[clap(short, long, default_value = ".")]
     pub destination: String,
 
     #[clap(long)]
