@@ -12,8 +12,6 @@ use url_handler::UrlHandler;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    const BASE_URL: &str = "https://boards.4channel.org";
-
     let url = format!("{}{}", BASE_URL, &args.url);
     let response = reqwest::get(url).await?;
 
