@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::process::exit;
 use rust::create_directories;
 use rust::write_bytes;
 use rust::Args;
