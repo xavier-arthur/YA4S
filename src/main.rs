@@ -12,7 +12,8 @@ use url_handler::UrlHandler;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let url = format!("{}{}", BASE_URL, &args.url);
+    // let url = format!("{}{}", BASE_URL, &args.url);
+    let url = String::new();
     let response = reqwest::get(url).await?;
 
     let html = response.text().await?;
