@@ -21,11 +21,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .pop()
         .unwrap();
 
-    let target_path = format!("{}/{}", &args.destination, thread_num);
-    
+    let formatted_path = &format!("{}/{}", &args.output, thread_num);
+    let target_path = Path::new(formatted_path);
+
     create_directories(
         &thread_num,
-        Path::new(&args.destination)
+        Path::new(&args.output)
     );
 
     for img in Html::select(&Html::parse_document(&html), &selector) {
@@ -36,27 +37,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         } 
     }
 
+    let mut file_name: &str;
+
     for link in srcs {
+        file_name = match link.split("/") .collect::<Vec<&str>>().pop() {
+            Some(val) => val,
+            None => panic!("couldn't get file name of {}", link)
+        };
+
+        let full_path = target_path.join(file_name);
+
+        if full_path.exists() {
+            println!("{} exists, skipping...", full_path.display());
+            continue;
+        }
+
         if args.verbose {
             println!("downloading {}", &link);
         }
 
-        let img = reqwest::get(&link)
-            .await?
+        let img = reqwest::get(&link).await?
             .bytes()
             .await?;
 
-        let name_extract = link.split("/")
-            .collect::<Vec<&str>>()
-            .pop();
-
-        let file_name = match name_extract {
-            Some(val) => val,
-            None => panic!("couldn't get file name of {}", link)
-        };
-        
         let write_result = write_bytes(
-            &format!("{}/{}", &target_path, file_name), 
+            &full_path,
             &img
         );
 
